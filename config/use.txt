@@ -1,0 +1,1 @@
+Stored all configuration file - Like DB configuration
