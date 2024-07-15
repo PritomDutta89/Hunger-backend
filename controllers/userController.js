@@ -3,9 +3,9 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import validator from "validator";
 
-//login user
+// login user
 const loginUser = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password } = req.body; // Only take email, password by array destructuring
 
   try {
     const user = await userModel.findOne({ email });
