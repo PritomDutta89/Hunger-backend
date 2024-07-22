@@ -26,27 +26,56 @@ const placeOrder = async (req, res) => {
     // now clear the user cart
     await userModel.findByIdAndUpdate(req.body.userId, { cartData: {} });
 
-    res.json({ success: true, message: "Successfully Added" });
+    // phone pe payment integration
+    const payEndPoint = "/pg/v1/pay";
+    const merchantTransactionId = uniqid();
+    const userId = 123;
 
-    // payment link...[7:50]
-  } catch (error) {
-    console.log(error);
-    res.json({ success: false, message: "Error" });
-  }
-};
+    const payLoad = {
+      merchantId: MERCHANT_ID,
+      merchantTransactionId: merchantTransactionId,
+      merchantUserId: req.body.userId,
+      amount: req.body.amount * 100, //in paise
+      redirectUrl: `http://localhost:4000/api/order/redirect-url/${merchantTransactionId}/${req.body.userId}`,
+      redirectMode: "REDIRECT",
+      // callbackUrl: "https://webhook.site/callback-url",
+      mobileNumber: "9999999999",
+      paymentInstrument: {
+        type: "PAY_PAGE",
+      },
+    };
 
-// Now verify order after payment done [Best way use webhook] - after payment done pass details from param from frontend to backend
-const verifyOrder = async (req, res) => {
-  const { orderId, success } = req.body;
+    // SHA256(base64 encoded payload + “/pg/v1/pay” + salt key) + ### + salt index
+    const bufferObj = Buffer.from(JSON.stringify(payLoad), "utf8");
+    const base64 = bufferObj.toString("base64");
+    const xVerify =
+      sha256(base64 + payEndPoint + SALT_KEY) + "###" + SALT_INDEX;
 
-  try {
-    if (success === "true") {
-      await orderModel.findByIdAndUpdate(orderId, { payment: true });
-      res.json({ success: true, message: "Paid" });
-    } else {
-      await orderModel.findByIdAndDelete(orderId);
-      res.json({ success: false, message: "Not Paid" });
-    }
+    const options = {
+      method: "post",
+      url: `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/pay`,
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+        "X-VERIFY": xVerify,
+      },
+      data: {
+        request: base64,
+      },
+    };
+    axios
+      .request(options)
+      .then(function (response) {
+        console.log(response.data);
+        const url = response?.data?.data?.instrumentResponse?.redirectInfo?.url;
+        // res.redirect(url);
+        res.json({ url: url });
+        res.send(response.data);
+      })
+      .catch(function (error) {
+        // res.json({ success: false, error });
+        console.error(error);
+      });
   } catch (error) {
     console.log(error);
     res.json({ success: false, message: "Error" });
@@ -95,7 +124,8 @@ const payIntegration = async (req, res) => {
     .then(function (response) {
       console.log(response.data);
       const url = response?.data?.data?.instrumentResponse?.redirectInfo?.url;
-      res.redirect(url);
+      // res.redirect(url);
+      res.json({ url: url });
       res.send(response.data);
     })
     .catch(function (error) {
@@ -106,8 +136,7 @@ const payIntegration = async (req, res) => {
 
 // verify order - phonepe
 const redirectUrl = async (req, res) => {
-  const { merchantTransactionId } = req.params;
-  console.log("merchantTransactionId: ", merchantTransactionId);
+  const { merchantTransactionId, userId } = req.params;
   if (merchantTransactionId) {
     // SHA256(“/pg/v1/status/{merchantId}/{merchantTransactionId}” + saltKey) + “###” + saltIndex
     const xVerify =
@@ -133,13 +162,16 @@ const redirectUrl = async (req, res) => {
       .then(function (response) {
         console.log(response.data);
 
-        if(response.data.code === 'PAYMENT_SUCCESS')
-        {
+        if (response.data.code === "PAYMENT_SUCCESS") {
           // redirect frontend - verify page
-        }
-        else
-        {
+          res.redirect(
+            `http://localhost:5173/verify?success=true&orderId=${userId}`
+          );
+        } else {
           // redirect frontend - verify page
+          res.redirect(
+            `http://localhost:5173/verify?success=false&orderId=${userId}`
+          );
         }
 
         res.send(response.data);
@@ -149,6 +181,24 @@ const redirectUrl = async (req, res) => {
       });
   } else {
     res.send({ error: "Error" });
+  }
+};
+
+// Now verify order after payment done [Best way use webhook] - after payment done pass details from param from frontend to backend
+const verifyOrder = async (req, res) => {
+  const { orderId, success } = req.body;
+
+  try {
+    if (success === "true") {
+      await orderModel.findByIdAndUpdate(orderId, { payment: true });
+      res.json({ success: true, message: "Paid" });
+    } else {
+      await orderModel.findByIdAndDelete(orderId);
+      res.json({ success: false, message: "Not Paid" });
+    }
+  } catch (error) {
+    console.log(error);
+    res.json({ success: false, message: "Error" });
   }
 };
 
