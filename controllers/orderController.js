@@ -187,13 +187,19 @@ const redirectUrl = async (req, res) => {
 // Now verify order after payment done [Best way use webhook] - after payment done pass details from param from frontend to backend
 const verifyOrder = async (req, res) => {
   const { orderId, success } = req.body;
-
   try {
     if (success === "true") {
-      await orderModel.findByIdAndUpdate(orderId, { payment: true });
-      res.json({ success: true, message: "Paid" });
+      const data = await orderModel.updateOne(
+        { userId: orderId },
+        {
+          $set: { payment: "true" },
+        }
+      );
+
+      res.json({ success: true, data });
     } else {
-      await orderModel.findByIdAndDelete(orderId);
+      // await orderModel.findByIdAndDelete(orderId); // it search based on _id, not userId
+      const data = await orderModel.deleteOne({ userId: orderId });
       res.json({ success: false, message: "Not Paid" });
     }
   } catch (error) {
