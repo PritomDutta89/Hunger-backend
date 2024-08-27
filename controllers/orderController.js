@@ -3,13 +3,18 @@ import userModel from "../models/userModel.js";
 import axios from "axios";
 import uniqid from "uniqid";
 import sha256 from "sha256";
+import dotenv from "dotenv";
+
+dotenv.config();
 // const axios = require("axios");
 
 // Phone pe config
-const PHONE_PE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
-const MERCHANT_ID = "PGTESTPAYUAT86";
-const SALT_INDEX = 1;
-const SALT_KEY = "96434309-7796-489d-8924-ab56988a6076";
+const PHONE_PE_HOST_URL = process.env.PHONE_PE_HOST_URL;
+const MERCHANT_ID = process.env.MERCHANT_ID;
+const SALT_INDEX = process.env.SALT_INDEX;
+const SALT_KEY = process.env.SALT_KEY;
+const PHONE_PE_REDIRECT_URL_BACKEND = "http://localhost:4000";
+const PHONE_PE_REDIRECT_URL_FRONTEND = "http://localhost:5173";
 
 // placing user order from frontend
 const placeOrder = async (req, res) => {
@@ -36,7 +41,7 @@ const placeOrder = async (req, res) => {
       merchantTransactionId: merchantTransactionId,
       merchantUserId: req.body.userId,
       amount: req.body.amount * 100, //in paise
-      redirectUrl: `http://localhost:4000/api/order/redirect-url/${merchantTransactionId}/${req.body.userId}`,
+      redirectUrl: `${PHONE_PE_REDIRECT_URL_BACKEND}/api/order/redirect-url/${merchantTransactionId}/${req.body.userId}`,
       redirectMode: "REDIRECT",
       // callbackUrl: "https://webhook.site/callback-url",
       mobileNumber: "9999999999",
@@ -93,7 +98,7 @@ const payIntegration = async (req, res) => {
     merchantTransactionId: merchantTransactionId,
     merchantUserId: "123",
     amount: 30000, //in paise
-    redirectUrl: `http://localhost:4000/api/order/redirect-url/${merchantTransactionId}`,
+    redirectUrl: `${PHONE_PE_REDIRECT_URL_BACKEND}/api/order/redirect-url/${merchantTransactionId}`,
     redirectMode: "REDIRECT",
     // callbackUrl: "https://webhook.site/callback-url",
     mobileNumber: "9999999999",
@@ -165,12 +170,12 @@ const redirectUrl = async (req, res) => {
         if (response.data.code === "PAYMENT_SUCCESS") {
           // redirect frontend - verify page
           res.redirect(
-            `http://localhost:5173/verify?success=true&orderId=${userId}`
+            `${PHONE_PE_REDIRECT_URL_FRONTEND}/verify?success=true&orderId=${userId}`
           );
         } else {
           // redirect frontend - verify page
           res.redirect(
-            `http://localhost:5173/verify?success=false&orderId=${userId}`
+            `${PHONE_PE_REDIRECT_URL_FRONTEND}/verify?success=false&orderId=${userId}`
           );
         }
 
