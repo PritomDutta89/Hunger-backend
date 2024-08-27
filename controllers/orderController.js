@@ -208,8 +208,8 @@ const verifyOrder = async (req, res) => {
   }
 };
 
-// use orders for frontend
-const useOrders = async (req, res) => {
+// user orders for frontend
+const userOrders = async (req, res) => {
   try {
     const orders = await orderModel.find({ userId: req.body.userId });
     res.json({ success: true, data: orders });
@@ -218,4 +218,42 @@ const useOrders = async (req, res) => {
   }
 };
 
-export { placeOrder, verifyOrder, payIntegration, redirectUrl, useOrders };
+// listing orders for admin panel
+const listOrders = async (req, res) => {
+  try {
+    const orders = await orderModel.find({});
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    res.json({ success: false, message: "Error" });
+  }
+};
+
+// API for updating order status
+const updateStatus = async (req, res) => {
+  try {
+    // const orders = await orderModel.updateOne(
+    //   { userId: req.body.orderId },
+    //   {
+    //     $set: { status: req.body.status },
+    //   }
+    // );
+
+    const orders = await orderModel.findByIdAndUpdate(req.body.orderId, {
+      status: req.body.status,
+    });
+
+    res.json({ success: true, message: "Status updated" });
+  } catch (error) {
+    res.json({ success: false, message: "Error" });
+  }
+};
+
+export {
+  placeOrder,
+  verifyOrder,
+  payIntegration,
+  redirectUrl,
+  userOrders,
+  listOrders,
+  updateStatus,
+};
