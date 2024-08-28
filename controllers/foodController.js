@@ -3,14 +3,14 @@ import fs from "fs";
 
 // add food item - POST
 const addFood = async (req, res) => {
-  let image_filename = `${req.file.filename}`;
+  // let image_filename = `${req.file.filename}`;
 
   const food = new foodModel({
     name: req.body.name,
     description: req.body.description,
     price: req.body.price,
     category: req.body.category,
-    image: image_filename,
+    image: req.body.image, //image_filename
   });
 
   try {
@@ -43,7 +43,7 @@ const listFood = async (req, res) => {
 const removeFood = async (req, res) => {
   try {
     const food = await foodModel.findById(req.body._id); // by this find the whole object for that specific ID
-    fs.unlink(`uploads/${food.image}`, () => {}); // Delete img from uploads folder
+    // fs.unlink(`uploads/${food.image}`, () => {}); // Delete img from uploads folder
 
     await foodModel.findByIdAndDelete(req.body._id); // Delete from DB
     res.json({ success: true, message: "Food removed" });
