@@ -13,8 +13,8 @@ const PHONE_PE_HOST_URL = process.env.PHONE_PE_HOST_URL;
 const MERCHANT_ID = process.env.MERCHANT_ID;
 const SALT_INDEX = process.env.SALT_INDEX;
 const SALT_KEY = process.env.SALT_KEY;
-const PHONE_PE_REDIRECT_URL_BACKEND = "http://localhost:4000";
-const PHONE_PE_REDIRECT_URL_FRONTEND = "http://localhost:5173";
+const PHONE_PE_REDIRECT_URL_BACKEND = "https://hunger-backend-ta6i.onrender.com";
+const PHONE_PE_REDIRECT_URL_FRONTEND = "https://hunger-food.netlify.app";
 
 // placing user order from frontend
 const placeOrder = async (req, res) => {
